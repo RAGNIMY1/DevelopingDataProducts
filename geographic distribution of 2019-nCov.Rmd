@@ -1,0 +1,90 @@
+---
+title: "Geographical distribution of 2019-nCov as of February 07th 2020"
+author: "Myriam Ragni"
+date: "8 Februar 2020"
+output: html_document
+---
+
+## Introduction
+The purpose of this assignment is to create a web page using R Markdown that features an interactive map created with Leaflet. I've chosen to represent the propagation of the Coronavirus worldwide, as of February 7th, 2020.  
+Data has been extracted from the following source: [Distribution of laboratory confirmed cases of 2019-nCoV worldwide](https://www.ecdc.europa.eu/en/geographical-distribution-2019-ncov-cases).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=60), echo = FALSE, eval=TRUE, tidy=TRUE, warning=FALSE, message=FALSE, root.dir="c:/RAGNIMY1/datasciencecoursera/DevelopingDataProducts")
+```
+
+```{r Setenv, results="hide"}
+rm(list = ls())
+Sys.setlocale("LC_TIME", "English")
+suppressWarnings(library(leaflet))
+suppressWarnings(library(openxlsx))
+suppressWarnings(library(dplyr))
+suppressWarnings(library(stringr))
+```
+
+
+## Basic Information about the data
+```{r PrepareDataset, echo=FALSE}
+#### Basic information about the dataset
+df <- read.xlsx("./2019-nCov-Case.xlsx",sheet = 1, colNames=TRUE)
+df$Latitude <- as.numeric(df$Latitude)
+df$Longitude <- as.numeric(df$Longitude)
+str(df)
+head(df, 10)
+```
+The dataset used to build the interactive map consists of the number of reported 2019-nCov cases and deaths by region and country.  
+
+## Interactive Map
+### Geographical distribution of 2019-nCov as of February 07th 2020
+
+```{r MapLeaflet, fig.height = 8, fig.width = 10, echo=FALSE}
+#### Set the threshold for the color of the marker
+getColor <- function(df) {
+  sapply(df$Cases, function(Cases) {
+  if(Cases < 50) {
+    "green"
+  } else if(Cases < 500) {
+    "orange"
+  } else {
+    "red"
+  } })
+}
+
+#### Select the 'ios-body' icon from the 'ion' icon library
+icons <- awesomeIcons(
+  icon = 'ios-body',
+  iconColor = 'black',
+  library = 'ion',
+  markerColor = getColor(df)
+)
+
+#### Interactive map with popup text including the country name, the number of reported cases and the number of deaths
+nCovMap <- df %>% 
+  mutate(Popup = str_c(Country,str_c("Reported Cases: ", Cases), str_c("Deaths: ", Deaths) , sep = "<br/>")) %>%
+  leaflet(width = "100%") %>% 
+  addProviderTiles("Esri.WorldStreetMap") %>%
+  addAwesomeMarkers(lat=~Latitude, lng=~Longitude, icon=icons, popup=~Popup)
+nCovMap
+```
+
+*Notes*     
+* On the map, countries with less than 50 confirmed cases are highlighted in green, those with less than 500 cases in orange and the rest in red.   
+* The markers are set on the countries' capital through the cases may not have been reported in that city.   
+* Click on a market to get the number of confirmed/reported 2019-nCov cases as well as the number of deaths for a specific country.  
+
+\newpage
+## Appendix 
+### Preparing the environment
+```{r Setup2, ref.label='Setup', echo=TRUE, eval=TRUE}
+```
+
+```{r Setenv2, ref.label='Setenv', echo=TRUE, eval=TRUE, results="hide"}
+```
+
+### Basic Information about the data
+```{r PrepareDataset2, ref.label='PrepareDataset', echo=TRUE, eval=TRUE, results="hide"}
+```
+
+### Interactive Map
+```{r MapLeaflet2, ref.label='MapLeaflet', echo=TRUE, eval=TRUE, results="hide"}
+```
